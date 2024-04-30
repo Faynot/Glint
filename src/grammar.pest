@@ -1,0 +1,39 @@
+operation = { add | subtract | multiply | divide | power | floor_divide | modulo }
+
+add = { "+" }
+subtract = { "-" }
+multiply = { "*" }
+divide = { "/" }
+power = { "**" }
+floor_divide = { "//" }
+modulo = { "%" }
+
+// Команды
+command = { magic_input | asynchrony | temporal_loop | data_analysis | count | pass | class | write }
+
+magic_input = { "MagicInput()" }
+asynchrony = { "Asynchrony()" }
+temporal_loop = { "TemporalLoop()" }
+data_analysis = { "DataAnalysis()" }
+count = { "Count()" }
+pass = { "pass" }
+class = { "class" }
+write = { "write" }
+
+function_declaration = { "function" ~ identifier ~ "(" ~ parameters ~ ")" }
+
+identifier = { ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+
+parameters = { (variable ~ "," ~ variable)* }
+
+variable = { ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+
+num = @{ int ~ ("." ~ ASCII_DIGIT*)? ~ ("e" ~ int)? }
+int = { ("+" | "-")? ~ ASCII_DIGIT+ }
+
+expr = { term ~ (operation ~ term)* }
+term = _{ num | "(" ~ expr ~ ")" }
+
+calculation = _{ SOI ~ expr ~ EOI }
+
+WHITESPACE  = _{ " " | "\t" }
