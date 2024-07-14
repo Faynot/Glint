@@ -6,7 +6,7 @@ Glint is a lightweight interpreted programming language written entirely in Rust
 
 ### Features:
 - **Interpreted:** Glint is designed to be interpreted, making it easy to run and debug code without compilation steps.
-- 
+
 - **Error Handling:** With a beautiful and user-friendly error handler, Glint provides clear feedback when something goes wrong.
 
   ![Error Handling Screenshot Placeholder](placeholder-error-handler.png)
