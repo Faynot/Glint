@@ -12,14 +12,15 @@ Glint is a lightweight interpreted programming language written entirely in Rust
   ![Error Handling Screenshot Placeholder](placeholder-error-handler.png)
   
 - **Simplicity:** It's simpler than any existing language, with a straightforward syntax and structure that encourages readability and ease of understanding.
-- 
+
+
 - **Performance:** Despite its simplicity, Glint is optimized for speed, making it suitable for performance-critical applications.
-- 
+
   - *Comparison:* Glint is significantly faster than Python and competes closely with other popular languages like JavaScript, Java and Ruby in speed tests.
-  - 
-- **Safety:** Glint has sufficient functionality to ensure sufficient security of your computer resources, due to the grammatical work in Rust.
-- 
-- **Dynamic Typing:** Glint embraces dynamic typing, allowing flexibility without the need for explicit type annotations.
+  
+  - **Safety:** Glint has sufficient functionality to ensure sufficient security of your computer resources, due to the grammatical work in Rust.
+
+  - **Dynamic Typing:** Glint embraces dynamic typing, allowing flexibility without the need for explicit type annotations.
 
 
 ### Getting Started
