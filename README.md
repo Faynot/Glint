@@ -44,7 +44,7 @@ Discover the simplicity and power of Glint with these examples:
   ```
 
 - **Simple Arithmetic:**
-  ```rust
+  ```Glint
   a is 10
   b is 20
   sum is a + b
@@ -56,6 +56,10 @@ Contributions to Glint are welcome! Fork the repository and submit pull requests
 
 ### License
 Glint is licensed under the MIT License. See [LICENSE](./LICENSE) for details.
+
+
+
+### Make your code flexible with Glint✨
 
 ---
 
