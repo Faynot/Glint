@@ -1,44 +1,123 @@
-// use serde_json::to_string_pretty; // Импорт функции для красивого вывода JSON
-use std::env; // Импорт модуля для работы с аргументами командной строки
-use std::process; // Импорт модуля для работы с процессами
-mod errors;
-mod parser; // Импорт модуля parser.rs
-mod tokenizator; // Импорт модуля tokenizator.rs // Импорт модуля errors.rs
+use std::env;
+use std::fs;
+use std::time::Instant;
+use peak_alloc::PeakAlloc;
+use serde_cbor;
+use Glint::ast::AST;
+use Glint::error::ParseError;
+use Glint::parser::parse_program;
+use sysinfo::System;
+use colored::Colorize;
+
+#[global_allocator]
+static PEAK_ALLOC: PeakAlloc = PeakAlloc;
+
+const INFO: &str = r#"
+                 ✧Glint v0.0.1✧
+       Usage: Glint [command] [options]
+       Commands:
+        run <filename>.glt    Run the script
+        info                  Display info
+       flags:
+        -dev                  Display dev info
+"#;
+
+fn print_version_info() {
+    let header = "✧Glint v0.0.1✧".bright_blue();
+    let usage = "Usage:".cyan();
+    let commands = "Commands:".cyan();
+    let flags = "flags:".cyan();
+
+    let info_colored = INFO
+        .replace("✧Glint v0.0.1✧", &header.to_string())
+        .replace("Usage:", &usage.to_string())
+        .replace("Commands:", &commands.to_string())
+        .replace("flags:", &flags.to_string());
+
+    println!("{}", info_colored);
+}
+
+fn print_dev_info(start_time: Instant) {
+    let elapsed = start_time.elapsed();
+    let elapsed_secs = elapsed.as_secs_f64();
+    let peak_mem_gb = PEAK_ALLOC.peak_usage_as_gb();
+    let current_mem_mb = PEAK_ALLOC.current_usage_as_mb();
+
+    println!("{} Dev Info {}", "<=>".blue(), "<=>".blue());
+    println!("{}: {:.4}s", "Elapsed time".truecolor(41, 176, 255), elapsed_secs);
+    println!("{}:", "Resource consumption".truecolor(0, 76, 120));
+    println!("  └─ {}: {:.4} MB", "RAM Usage".truecolor(41, 176, 255), current_mem_mb);
+    println!("  └─ {}: {:.4} GB", "Peak RAM Usage".truecolor(41, 176, 255), peak_mem_gb);
+    println!("  └─ {}: {:?}", "OS".truecolor(41, 176, 255), System::os_version());
+    println!("{} End Dev Info {}", "<=>".blue(), "<=>".blue());
+}
 
 fn main() {
-    let args: Vec<String> = env::args().collect(); // Получаем аргументы командной строки
-    if args.len() != 2 {
-        eprintln!("Usage: cargo run <filename>.glt"); // Выводим сообщение об использовании, если аргументы не верны
-        process::exit(1); // Завершаем программу с кодом ошибки
-    }
+    let start_time = Instant::now();
+    let args: Vec<String> = env::args().collect();
 
-    let filename = &args[1]; // Получаем имя файла из аргументов командной строки
-    let input = match parser::read_file(filename) {
-        // Читаем содержимое файла
-        Ok(content) => content, // Если чтение прошло успешно, получаем содержимое файла
-        Err(err) => {
-            // Если возникла ошибка
-            eprintln!("Error reading file {}: {}", filename, err); // Выводим сообщение об ошибке
-            process::exit(1); // Завершаем программу с кодом ошибки
+    match args.len() {
+        1 => {
+            // No command provided, print version info
+            print_version_info();
         }
-    };
-
-    let tokens = match parser::parse_tokens(&input) {
-        // Парсим токены из содержимого файла
-        Ok(tokens) => tokens, // Если парсинг прошёл успешно, получаем токены
-        Err(err) => {
-            // Если возникла ошибка
-            eprintln!("Error parsing tokens: {}", err); // Выводим сообщение об ошибке
-            process::exit(1); // Завершаем программу с кодом ошибки
+        2 => {
+            if args[1] == "info" {
+                // Print version info
+                print_version_info();
+            } else {
+                eprintln!("Usage: Glint [command] [options]");
+            }
         }
-    };
+        3 | 4 => {
+            if args[1] == "run" {
+                let filename = &args[2];
+                let mut dev_flag = false;
 
-    let json_data = tokenizator::tokens_to_json(&tokens); // Конвертируем токены в JSON
-    if let Err(err) = serde_json::to_string_pretty(&json_data) {
-        // Конвертируем JSON в красиво отформатированную строку
-        eprintln!("Error serializing tokens to JSON: {}", err); // Выводим сообщение об ошибке при сериализации JSON
-        process::exit(1); // Завершаем программу с кодом ошибки
+                if args.len() == 4 && args[3] == "-dev" {
+                    dev_flag = true;
+                }
+
+                // Print developer info before processing the file if -dev is present
+                if dev_flag {
+                    print_dev_info(start_time);
+                }
+
+                let input = match fs::read_to_string(filename) {
+                    Ok(contents) => contents,
+                    Err(err) => {
+                        eprintln!("Error reading file: {}", err);
+                        return;
+                    }
+                };
+
+                match parse_program(&input) {
+                    Ok(ast) => {
+                        let cbor = serde_cbor::to_vec(&ast).unwrap();
+                        println!("CBOR: {:?}", cbor);
+
+                        let deserialized_ast: AST = serde_cbor::from_slice(&cbor).unwrap();
+                        println!("{:#?}", deserialized_ast);
+                    }
+                    Err(ParseError::UnknownToken { token, line }) => {
+                        eprintln!("Unknown token '{}' on line {}", token, line);
+                    }
+                    Err(ParseError::IoError(err)) => {
+                        eprintln!("IO Error: {}", err);
+                    }
+                    Err(ParseError::SyntaxError { message, line }) => {
+                        eprintln!("Syntax error on line {}: {}", line, message);
+                    }
+                    Err(ParseError::NomError(_)) => {
+                        eprintln!("Parsing error occurred.");
+                    }
+                }
+            } else {
+                eprintln!("Usage: Glint run <filename>.glt [-dev]");
+            }
+        }
+        _ => {
+            eprintln!("Usage: Glint [command] [options]");
+        }
     }
-
-    println!("{}", serde_json::to_string_pretty(&json_data).unwrap()); // Выводим отформатированную строку JSON
 }

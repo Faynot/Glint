@@ -1,5 +1,3 @@
-write 1
-function some(a, b):
-    write "2"
-    function other(c, d):
-        write "3"
+x is [
+{a: 1},
+{a: 1}]
